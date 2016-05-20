@@ -1,2 +1,2 @@
-# coolweather
-just for fun
+# CoolWeather
+A simple android weather app.
