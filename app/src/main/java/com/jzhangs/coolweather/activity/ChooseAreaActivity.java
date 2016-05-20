@@ -3,22 +3,18 @@ package com.jzhangs.coolweather.activity;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.jzhangs.coolweather.R;
 import com.jzhangs.coolweather.db.CoolWeatherDB;
 import com.jzhangs.coolweather.model.City;
 import com.jzhangs.coolweather.model.County;
 import com.jzhangs.coolweather.model.Province;
-import com.jzhangs.coolweather.util.HttpCallbackListener;
-import com.jzhangs.coolweather.util.HttpUtil;
 import com.jzhangs.coolweather.util.Utility;
 
 import java.util.ArrayList;
@@ -29,6 +25,11 @@ public class ChooseAreaActivity extends Activity {
     public static final int LEVEL_PROVINCE = 0;
     public static final int LEVEL_CITY = 1;
     public static final int LEVEL_COUNTY = 2;
+
+    // https://api.heweather.com/x3/citylist?search=allchina&key=4e8f0b3c96454a44a8bff0a21b3d4a73
+    private static final String CITYID_URL = "https://api.heweather.com/x3/citylist?" +
+            "search=allchina&key=";
+    private static final String API_KEY = "&key=4e8f0b3c96454a44a8bff0a21b3d4a73";
 
     private ProgressDialog progressDialog;
     private TextView titleText;
@@ -52,7 +53,7 @@ public class ChooseAreaActivity extends Activity {
         setContentView(R.layout.choose_area);
         listView = (ListView) findViewById(R.id.list_view);
         titleText = (TextView) findViewById(R.id.title_text);
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, dataList);
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, dataList);
         listView.setAdapter(adapter);
 
         coolWeatherDB = CoolWeatherDB.getInstance(this);
@@ -60,7 +61,7 @@ public class ChooseAreaActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (currentLevel == LEVEL_PROVINCE) {
-                    selectedProvince =  provinceList.get(position);
+                    selectedProvince = provinceList.get(position);
                     queryCities();
                 } else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(position);
@@ -83,12 +84,12 @@ public class ChooseAreaActivity extends Activity {
             titleText.setText("中国");
             currentLevel = LEVEL_PROVINCE;
         } else {
-            queryFromServer(null, "province");
+            queryFromFile("province");
         }
     }
 
     private void queryCities() {
-        cityList = coolWeatherDB.loadCities(selectedProvince.getId());
+        cityList = coolWeatherDB.loadCities(selectedProvince.getProvinceCode());
         if (cityList.size() > 0) {
             dataList.clear();
             for (City city : cityList) {
@@ -99,12 +100,12 @@ public class ChooseAreaActivity extends Activity {
             titleText.setText(selectedProvince.getProvinceName());
             currentLevel = LEVEL_CITY;
         } else {
-            queryFromServer(selectedProvince.getProvinceCode(), "city");
+            queryFromFile("city");
         }
     }
 
     private void queryCounties() {
-        countyList = coolWeatherDB.loadCounties(selectedCity.getId());
+        countyList = coolWeatherDB.loadCounties(selectedCity.getCityCode());
         if (countyList.size() > 0) {
             dataList.clear();
             for (County county : countyList) {
@@ -115,31 +116,27 @@ public class ChooseAreaActivity extends Activity {
             titleText.setText(selectedCity.getCityName());
             currentLevel = LEVEL_COUNTY;
         } else {
-            queryFromServer(selectedCity.getCityCode(), "county");
+            queryFromFile("county");
         }
     }
 
-    private void queryFromServer(final String code, final String type) {
-        String address;
-        if (!TextUtils.isEmpty(code)) {
-            address = "http://www.weather.com.cn/data/list3/city" + code + ".xml";
-        } else {
-            address = "http://www.weather.com.cn/data/list3/city.xml";
-        }
-
+    private void queryFromFile(final String type) {
         showProgressDialog();
-        HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+        new Thread(new Runnable() {
             @Override
-            public void onFinish(String response) {
+            public void run() {
+                String content;
                 boolean result = false;
+
                 if ("province".equals(type)) {
-                    result = Utility.handleProvincesResponse(coolWeatherDB, response);
+                    content = Utility.loadRawFile(getApplicationContext(), R.raw.province);
+                    result = Utility.handleProvinces(coolWeatherDB, content);
                 } else if ("city".equals(type)) {
-                    result = Utility.handleCitiesResponse(coolWeatherDB, response,
-                            selectedProvince.getId());
+                    content = Utility.loadRawFile(getApplicationContext(), R.raw.city);
+                    result = Utility.handleCities(coolWeatherDB, content, selectedProvince.getProvinceCode());
                 } else if ("county".equals(type)) {
-                    result = Utility.handleCountiesResponse(coolWeatherDB, response,
-                            selectedCity.getId());
+                    content = Utility.loadRawFile(getApplicationContext(), R.raw.county);
+                    result = Utility.handleCounties(coolWeatherDB, content, selectedCity.getCityCode());
                 }
 
                 if (result) {
@@ -158,19 +155,7 @@ public class ChooseAreaActivity extends Activity {
                     });
                 }
             }
-
-            @Override
-            public void onError(Exception e) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        closeProgressDialog();
-                        Toast.makeText(ChooseAreaActivity.this, "加载失败",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
+        }).start();
     }
 
     private void showProgressDialog() {
