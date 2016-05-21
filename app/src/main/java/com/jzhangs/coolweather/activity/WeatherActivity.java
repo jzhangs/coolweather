@@ -13,15 +13,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.jzhangs.coolweather.R;
+import com.jzhangs.coolweather.service.AutoUpdateService;
 import com.jzhangs.coolweather.util.HttpCallbackListener;
 import com.jzhangs.coolweather.util.HttpUtil;
 import com.jzhangs.coolweather.util.Utility;
 
 public class WeatherActivity extends Activity implements View.OnClickListener {
-
-    // https://api.heweather.com/x3/weather?cityid=countyCode&key=XXXXXXXXX
-    private static final String CITYID_URL = "https://api.heweather.com/x3/weather?cityid=";
-    private static final String API_KEY = "&key=4e8f0b3c96454a44a8bff0a21b3d4a73";
 
     private LinearLayout weatherInfoLayout;
 
@@ -95,7 +92,7 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
      * Query weather info according to county code
      */
     private void queryWeatherInfo(String countyCode) {
-        String address = CITYID_URL  + countyCode + API_KEY;
+        String address = Utility.CITYID_URL  + countyCode + Utility.API_KEY;
         queryFromServer(address);
     }
 
@@ -143,6 +140,8 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
 
         weatherInfoLayout.setVisibility(View.VISIBLE);
         cityNameText.setVisibility(View.VISIBLE);
+        Intent i = new Intent(this, AutoUpdateService.class);
+        startService(i);
     }
 
 }

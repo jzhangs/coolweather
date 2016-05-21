@@ -22,6 +22,11 @@ import java.util.Date;
 import java.util.Locale;
 
 public class Utility {
+
+    // https://api.heweather.com/x3/weather?cityid=countyCode&key=XXXXXXXXX
+    public static final String CITYID_URL = "https://api.heweather.com/x3/weather?cityid=";
+    public static final String API_KEY = "&key=4e8f0b3c96454a44a8bff0a21b3d4a73";
+
     /**
      * province info, formatted as "1|北京|10101"
      */
