@@ -2,7 +2,10 @@ package com.jzhangs.coolweather.activity;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -26,11 +29,6 @@ public class ChooseAreaActivity extends Activity {
     public static final int LEVEL_CITY = 1;
     public static final int LEVEL_COUNTY = 2;
 
-    // https://api.heweather.com/x3/citylist?search=allchina&key=4e8f0b3c96454a44a8bff0a21b3d4a73
-    private static final String CITYID_URL = "https://api.heweather.com/x3/citylist?" +
-            "search=allchina&key=";
-    private static final String API_KEY = "&key=4e8f0b3c96454a44a8bff0a21b3d4a73";
-
     private ProgressDialog progressDialog;
     private TextView titleText;
     private ListView listView;
@@ -49,6 +47,15 @@ public class ChooseAreaActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean("city_selected", false)) {
+            Intent intent  = new Intent(this, WeatherActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.choose_area);
         listView = (ListView) findViewById(R.id.list_view);
@@ -66,6 +73,12 @@ public class ChooseAreaActivity extends Activity {
                 } else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(position);
                     queryCounties();
+                } else if (currentLevel == LEVEL_COUNTY) {
+                    String countyCode = countyList.get(position).getCountyCode();
+                    Intent intent = new Intent(ChooseAreaActivity.this, WeatherActivity.class);
+                    intent.putExtra("county_code", countyCode);
+                    startActivity(intent);
+                    finish();
                 }
             }
         });
@@ -129,13 +142,13 @@ public class ChooseAreaActivity extends Activity {
                 boolean result = false;
 
                 if ("province".equals(type)) {
-                    content = Utility.loadRawFile(getApplicationContext(), R.raw.province);
+                    content = Utility.loadRawFile(ChooseAreaActivity.this, R.raw.province);
                     result = Utility.handleProvinces(coolWeatherDB, content);
                 } else if ("city".equals(type)) {
-                    content = Utility.loadRawFile(getApplicationContext(), R.raw.city);
+                    content = Utility.loadRawFile(ChooseAreaActivity.this, R.raw.city);
                     result = Utility.handleCities(coolWeatherDB, content, selectedProvince.getProvinceCode());
                 } else if ("county".equals(type)) {
-                    content = Utility.loadRawFile(getApplicationContext(), R.raw.county);
+                    content = Utility.loadRawFile(ChooseAreaActivity.this, R.raw.county);
                     result = Utility.handleCounties(coolWeatherDB, content, selectedCity.getCityCode());
                 }
 

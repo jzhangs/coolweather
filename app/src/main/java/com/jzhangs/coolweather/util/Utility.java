@@ -1,6 +1,8 @@
 package com.jzhangs.coolweather.util;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
 import com.jzhangs.coolweather.db.CoolWeatherDB;
@@ -8,10 +10,16 @@ import com.jzhangs.coolweather.model.City;
 import com.jzhangs.coolweather.model.County;
 import com.jzhangs.coolweather.model.Province;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class Utility {
     /**
@@ -108,5 +116,68 @@ public class Utility {
             }
         }
         return content.toString();
+    }
+
+    /**
+     * Parse json data from server, and save to local storage. sample json data in
+     * res/raw/county_info.json or http://www.heweather.com/documents/api-sample,
+     * formatted as below:
+     *   {
+     *     "HeWeather data service 3.0": [
+     *       {
+     *         "api": {...},
+     *         "basic": {...},
+     *         "daily_forecast": [...],
+     *         "hourly_forecast": [...],
+     *         "now": {"fl": "20"...},
+     *         "status": "ok",
+     *         "suggestion": {...}
+     *       }
+     *     ]
+     *   }
+     */
+    public static void handleWeatherResponse(Context context, String response) {
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONObject weatherInfo = jsonObject.getJSONArray("HeWeather data service 3.0")
+                    .getJSONObject(0);
+            String cityName = weatherInfo.getJSONObject("basic").getString("city");
+
+            JSONObject tempToday = weatherInfo.getJSONArray("daily_forecast")
+                    .getJSONObject(0).getJSONObject("tmp");
+            String temp1 = tempToday.getString("min");
+            String temp2 = tempToday.getString("max");
+
+            JSONObject currentCond = weatherInfo.getJSONObject("now").getJSONObject("cond");
+            String weatherCode = currentCond.getString("code");
+            String weatherDesp = currentCond.getString("txt");
+            String publishTime = weatherInfo.getJSONObject("basic").getJSONObject("update")
+                    .getString("loc");
+
+            saveWeatherInfo(context, cityName, weatherCode, temp1, temp2,
+                    weatherDesp, publishTime);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Save weather info to shared preferences
+     */
+    public static void saveWeatherInfo(Context context, String cityName, String weatherCode,
+                                       String temp1, String temp2, String weatherDesp,
+                                       String publishTime) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年M月d日", Locale.CHINA);
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context)
+                .edit();
+        editor.putBoolean("city_selected", true);
+        editor.putString("city_name", cityName);
+        editor.putString("weather_code", weatherCode);
+        editor.putString("temp1", temp1);
+        editor.putString("temp2", temp2);
+        editor.putString("weather_desp", weatherDesp);
+        editor.putString("publish_time", publishTime);
+        editor.putString("current_date", sdf.format(new Date()));
+        editor.apply();
     }
 }
