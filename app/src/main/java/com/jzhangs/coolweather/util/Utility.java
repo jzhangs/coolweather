@@ -142,6 +142,7 @@ public class Utility {
             JSONObject weatherInfo = jsonObject.getJSONArray("HeWeather data service 3.0")
                     .getJSONObject(0);
             String cityName = weatherInfo.getJSONObject("basic").getString("city");
+            String cityId = weatherInfo.getJSONObject("basic").getString("id");
 
             JSONObject tempToday = weatherInfo.getJSONArray("daily_forecast")
                     .getJSONObject(0).getJSONObject("tmp");
@@ -149,12 +150,11 @@ public class Utility {
             String temp2 = tempToday.getString("max");
 
             JSONObject currentCond = weatherInfo.getJSONObject("now").getJSONObject("cond");
-            String weatherCode = currentCond.getString("code");
             String weatherDesp = currentCond.getString("txt");
             String publishTime = weatherInfo.getJSONObject("basic").getJSONObject("update")
                     .getString("loc");
 
-            saveWeatherInfo(context, cityName, weatherCode, temp1, temp2,
+            saveWeatherInfo(context, cityName, cityId, temp1, temp2,
                     weatherDesp, publishTime);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -164,7 +164,7 @@ public class Utility {
     /**
      * Save weather info to shared preferences
      */
-    public static void saveWeatherInfo(Context context, String cityName, String weatherCode,
+    public static void saveWeatherInfo(Context context, String cityName, String cityId,
                                        String temp1, String temp2, String weatherDesp,
                                        String publishTime) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy年M月d日", Locale.CHINA);
@@ -172,7 +172,7 @@ public class Utility {
                 .edit();
         editor.putBoolean("city_selected", true);
         editor.putString("city_name", cityName);
-        editor.putString("weather_code", weatherCode);
+        editor.putString("city_id", cityId);
         editor.putString("temp1", temp1);
         editor.putString("temp2", temp2);
         editor.putString("weather_desp", weatherDesp);

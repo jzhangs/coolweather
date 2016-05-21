@@ -1,12 +1,14 @@
 package com.jzhangs.coolweather.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -15,7 +17,7 @@ import com.jzhangs.coolweather.util.HttpCallbackListener;
 import com.jzhangs.coolweather.util.HttpUtil;
 import com.jzhangs.coolweather.util.Utility;
 
-public class WeatherActivity extends Activity {
+public class WeatherActivity extends Activity implements View.OnClickListener {
 
     // https://api.heweather.com/x3/weather?cityid=countyCode&key=XXXXXXXXX
     private static final String CITYID_URL = "https://api.heweather.com/x3/weather?cityid=";
@@ -30,6 +32,9 @@ public class WeatherActivity extends Activity {
     private TextView temp1Text;
     private TextView temp2Text;
     private TextView currentDateText;
+
+    private Button switchCity;
+    private Button refreshWeather;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +51,11 @@ public class WeatherActivity extends Activity {
         temp2Text = (TextView) findViewById(R.id.temp2);
         currentDateText = (TextView) findViewById(R.id.current_date);
 
+        switchCity = (Button) findViewById(R.id.switch_city);
+        refreshWeather = (Button) findViewById(R.id.refresh_weather);
+        switchCity.setOnClickListener(this);
+        refreshWeather.setOnClickListener(this);
+
         String countyCode = getIntent().getStringExtra("county_code");
         if (!TextUtils.isEmpty(countyCode)) {
             publishText.setText("同步中...");
@@ -57,8 +67,32 @@ public class WeatherActivity extends Activity {
         }
     }
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.switch_city:
+                Intent intent = new Intent(this, ChooseAreaActivity.class);
+                intent.putExtra("from_weather_activity", true);
+                startActivity(intent);
+                finish();
+                break;
+
+            case R.id.refresh_weather:
+                publishText.setText("同步中...");
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                String cityId = prefs.getString("city_id", "");
+                if (!TextUtils.isEmpty(cityId)) {
+                    queryWeatherInfo(cityId);
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
     /**
-     * Query weather info accodrding to weather code
+     * Query weather info according to county code
      */
     private void queryWeatherInfo(String countyCode) {
         String address = CITYID_URL  + countyCode + API_KEY;
