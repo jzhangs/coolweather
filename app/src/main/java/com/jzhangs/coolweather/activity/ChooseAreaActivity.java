@@ -20,6 +20,8 @@ import com.jzhangs.coolweather.model.County;
 import com.jzhangs.coolweather.model.Province;
 import com.jzhangs.coolweather.util.Utility;
 
+import net.youmi.android.AdManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +51,7 @@ public class ChooseAreaActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AdManager.getInstance(this).init("4cab6e065c00ea57", "ee2edf60b105136b", false);
 
         isFromWeatherActivity = getIntent().getBooleanExtra("from_weather_activity", false);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);

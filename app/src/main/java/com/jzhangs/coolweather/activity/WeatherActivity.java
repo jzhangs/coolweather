@@ -18,6 +18,9 @@ import com.jzhangs.coolweather.util.HttpCallbackListener;
 import com.jzhangs.coolweather.util.HttpUtil;
 import com.jzhangs.coolweather.util.Utility;
 
+import net.youmi.android.banner.AdSize;
+import net.youmi.android.banner.AdView;
+
 public class WeatherActivity extends Activity implements View.OnClickListener {
 
     private LinearLayout weatherInfoLayout;
@@ -62,6 +65,10 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
         } else {
             showWeather();
         }
+
+        AdView adView = new AdView(this, AdSize.FIT_SCREEN);
+        LinearLayout adLayout = (LinearLayout) findViewById(R.id.adLayout);
+        adLayout.addView(adView);
     }
 
     @Override
